@@ -11,3 +11,7 @@
 # Concluding ideas
 -  Image processing / Clarifying images 
 
+# Finalizing Ideas/New Ideas Potentially
+-  Finding locations using Google Maps API and maybe add wrapper for something
+-  Needs YOLO and OpenCV
+-  GPT Wrapper? 
