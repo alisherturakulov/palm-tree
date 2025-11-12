@@ -4,4 +4,8 @@
   -  game; checkers; chess
   -  tech stack: processing, c++, java, vibe coding, reverse learning
   -  Weather API, machine learning, snowfall levels based on different factors
-  -  
+  -  Location detection
+    
+# Concluding ideas
+-  Image processing / Clarifying images 
+
