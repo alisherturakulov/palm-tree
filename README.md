@@ -1,4 +1,6 @@
   # Project Ideas for Winter Hackathon
+
+  Group Names: Ilir Boba
   -  Computer Vision project with ai model like YOLO
   -  Clarifying pixelated images
   -  game; checkers; chess
@@ -8,4 +10,5 @@
     
 # Concluding ideas
 -  Image processing / Clarifying images 
+
 
