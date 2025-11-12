@@ -15,3 +15,4 @@
 -  Finding locations using Google Maps API and maybe add wrapper for something
 -  Needs YOLO and OpenCV
 -  GPT Wrapper? 
+-  Nobel 
