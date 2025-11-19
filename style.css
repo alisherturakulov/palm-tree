@@ -1,0 +1,8 @@
+html, body{
+    margin:0;
+}
+.header{
+    display: flex;
+    align-items:center;
+    border-bottom:2px solid grey;
+}
