@@ -1,9 +1,16 @@
 from google import genai
 from google.genai import types
+#for api key retrieval
+import os
 
-client = genai.Client(api_key="GOOGLE_API_KEY")
+google_api_key = os.getenv('GOOGLE_API_KEY')
+if not google_api_key:
+    print(f"Error: cant find api key in environment variables")
+    exit(1)
 
-with open('path/to/small-sample.jpg', 'rb') as f:
+client = genai.Client(api_key=google_api_key)
+
+with open('sample.jpg', 'rb') as f:
     image_bytes = f.read()
 
 response = client.models.generate_content(
@@ -13,7 +20,11 @@ response = client.models.generate_content(
             data=image_bytes,
             mime_type='image/jpeg',
         ),
-        'Caption this image.'
+        ''''
+        give your best guess at the location of this image, 
+        then return only this url with fields filled in: 
+        https://www.google.com/maps/search/?api=1&query=<LATITUDE>,<LONGITUDE>
+        '''
     ]
 )
 
