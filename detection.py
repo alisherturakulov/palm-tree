@@ -19,33 +19,42 @@ response = client.models.generate_content(
         types.Part.from_bytes(
             data=image_bytes,
             mime_type='image/jpeg',
-        ),#should be https://www.google.com/maps/search/?api=1&query=25.0285,121.5714
-        ''''
+        ),#should be around 25.0285,121.5714
+        '''
         give your best guess at the location of this image, 
-        then return only this url with fields filled in: 
-        https://www.google.com/maps/search/?api=1&query=<LATITUDE>,<LONGITUDE>
+        then return only coordinates comma-separated like so: 
+        <LATITUDE>,<LONGITUDE>
         '''
         
     ]
 )
 
-maps_page = 
-"""
-<div class="maps-container">
-    <ul>
-        <li>
-            <a href="%GOOGLE_URL%"></a>
-                <p>
-                    Google Maps Query
-                </p>
-            </a>
-        <li>
-        <li>
-            %MAP_BODY%
-        </li>
-    <ul>
-</div>
+url = "https://www.google.com/maps/search/?api=1&query=%LATITUDE%,%LONGITUDE%"
+coord_str = response.text
+coord_str = "25.0285,121.5714"
+Latitude = float(coord_str[:coord_str.find(',')])
+Longitude = float(coord_str[coord_str.find(',')+1:])
 
+#complete url
+url.replace("%LATITUDE%", Latitude)
+url.replace("%LONGITUDE%", Longitude)
+
+maps_container = """
+    <div class="maps-container">
+        <ul>
+            <li>
+                <a href="%GOOGLE_URL%"></a>
+                    <p>
+                        Google Maps Query
+                    </p>
+                </a>
+            <li>
+            <li>
+                %MAP_BODY%
+            </li>
+        <ul>
+    </div>
 """
+maps_container.replace("%GOOGLE_URL%",url)
 
 print(response.text)
