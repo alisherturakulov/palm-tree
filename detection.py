@@ -31,7 +31,7 @@ response = client.models.generate_content(
 
 maps_page = 
 """
-<div class="maps-list">
+<div class="maps-container">
     <ul>
         <li>
             <a href="%GOOGLE_URL%"></a>
