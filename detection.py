@@ -19,13 +19,33 @@ response = client.models.generate_content(
         types.Part.from_bytes(
             data=image_bytes,
             mime_type='image/jpeg',
-        ),
+        ),#should be https://www.google.com/maps/search/?api=1&query=25.0285,121.5714
         ''''
         give your best guess at the location of this image, 
         then return only this url with fields filled in: 
         https://www.google.com/maps/search/?api=1&query=<LATITUDE>,<LONGITUDE>
         '''
+        
     ]
 )
+
+maps_page = 
+"""
+<div class="maps-list">
+    <ul>
+        <li>
+            <a href="%GOOGLE_URL%"></a>
+                <p>
+                    Google Maps Query
+                </p>
+            </a>
+        <li>
+        <li>
+            %MAP_BODY%
+        </li>
+    <ul>
+</div>
+
+"""
 
 print(response.text)
