@@ -126,8 +126,10 @@ OCR TEXT FROM IMAGE:
 url = "https://www.google.com/maps/search/?api=1&query=%LATITUDE%,%LONGITUDE%"
 coord_str = response.text
 coord_str = "25.0285,121.5714"
-Latitude = float(coord_str[:coord_str.find(',')])
-Longitude = float(coord_str[coord_str.find(',')+1:])
+first_bracket = coord_str.find('[')
+first_comma = coord_str.find(',', start = first_bracket)
+Latitude = float(coord_str[first_bracket+1:first_comma])#find(value, start, end)
+Longitude = float(coord_str[first_comma+1:coord_str.len()-1])
 
 #complete url
 url.replace("%LATITUDE%", Latitude)
