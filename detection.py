@@ -18,8 +18,13 @@ if not google_api_key:
 client = genai.Client(api_key=google_api_key)
 reader = easyocr.Reader(['en'], verbose=False)
 
+from utils.image_resize import resize_image
+
 with open('sample3.jpg', 'rb') as f:
     image_bytes = f.read()
+
+# Resize before sending to AI model
+image_bytes = resize_image(image_bytes, max_size=1024)
 
 
 ocr_results = reader.readtext('sample.jpg')
