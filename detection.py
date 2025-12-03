@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 #import easyocr until we fix import errors
 import folium
-#import resize_image from "\utils\image_resize.py"
+from utils.image_resize import resize_image
 
 load_dotenv('api.env')
 
@@ -20,7 +20,7 @@ if not google_api_key:
 client = genai.Client(api_key=google_api_key)
 #reader = easyocr.Reader(['en'], verbose=False)
 
-from utils.image_resize import resize_image
+
 
 with open('sample3.jpg', 'rb') as f:
     image_bytes = f.read()
@@ -140,14 +140,15 @@ latitude_string= coord_str[first_bracket+1:first_comma]#find(value, start, end)
 longitude_string = coord_str[first_comma+1:len(coord_str)-1]
 
 #complete url
-url.replace("%LATITUDE%", latitude_string)
-url.replace("%LONGITUDE%", longitude_string)
+url = url.replace("%LATITUDE%", latitude_string)
+url = url.replace("%LONGITUDE%", longitude_string)
 
 #create folium map
 m = folium.Map(
-    location=(float(latitude_string), float(longitude_string)),
+    location=[float(latitude_string), float(longitude_string)],
     width= 800,
-    height= 600
+    height= 600,
+    zoom_start = 17;
 )
 
 #get map components
@@ -173,21 +174,30 @@ maps_container = """
         <ul>
     </div>
 """
+#store maps.html contents
 html_frame = ""
 with open("maps.html", "r") as f:
     html_frame = f.read()
+    
 
-html_frame.replace("%MAP_META%", header)
-maps_container.replace("%MAP_BODY%", body_html)
-html_frame.replace("%MAP_SCRIPT%", script)
-maps_container.replace("%GOOGLE_URL%",url)
-html_frame.replace("%MAPS_CONTAINER%", maps_container)
+#replace 
+html_frame = html_frame.replace("%MAP_META%", header)
+maps_container = maps_container.replace("%MAP_BODY%", body_html)
+html_frame = html_frame.replace("%MAP_SCRIPT%", script)
+maps_container = maps_container.replace("%GOOGLE_URL%",url)
+html_frame = html_frame.replace("%MAPS_CONTAINER%", maps_container)
 
+print("header\n"+header)
+print("body_html\n"+body_html)
+print("script\n" + script)
+print("maps_container\n" + maps_container)
+
+#write updated html_frame to maps.html
 with open("maps.html", "w") as f:
     f.write(html_frame)
 
 #note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
 #html_frame.replace("%MAP_BODY%", body_html) map_body is in maps_container
 print(response.text)
-print("\nPage:\n")
-print(maps_container)
+print("\nhtml_frame:\n")
+print(html_frame)
