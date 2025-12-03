@@ -136,16 +136,16 @@ coord_str = response.text
 #coord_str = "25.0285,121.5714"
 first_bracket = coord_str.find('[')
 first_comma = coord_str.find(',', first_bracket)
-Latitude = float(coord_str[first_bracket+1:first_comma])#find(value, start, end)
-Longitude = float(coord_str[first_comma+1:coord_str.len()-1])
+latitude_string= coord_str[first_bracket+1:first_comma]#find(value, start, end)
+longitude_string = coord_str[first_comma+1:len(coord_str)-1]
 
 #complete url
-url.replace("%LATITUDE%", Latitude)
-url.replace("%LONGITUDE%", Longitude)
+url.replace("%LATITUDE%", latitude_string)
+url.replace("%LONGITUDE%", longitude_string)
 
 #create folium map
 m = folium.Map(
-    location=(Latitude, Longitude),
+    location=(float(latitude_string), float(longitude_string)),
     width= 800,
     height= 600
 )
