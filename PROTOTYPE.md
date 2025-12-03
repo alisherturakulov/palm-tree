@@ -8,12 +8,13 @@
   -  image resizing for larger images - Ilir
   -  integration with form file input - Nobel
   -  Map api inegration with location - Alisher
+  -  html page generation into a new tab - Nobel
   -  Ability to choose an image to run the model on 
 -  Webpage for uploading image file - Ethan
 -  Project presentation page design - Ilir
 -  Django backend setup to integrate files - Alisher
 ## Week 2
 -  separate github pages site to present project
--  integrate into django
+-  integrate into django 
 ## Week 3
 -  hosting via render
