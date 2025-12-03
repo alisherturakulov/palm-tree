@@ -180,10 +180,14 @@ with open("maps.html", "r") as f:
 html_frame.replace("%MAP_META%", header)
 maps_container.replace("%MAP_BODY%", body_html)
 html_frame.replace("%MAP_SCRIPT%", script)
-
 maps_container.replace("%GOOGLE_URL%",url)
-#note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
+html_frame.replace("%MAPS_CONTAINER%", maps_container)
 
+with open("maps.html", "w") as f:
+    f.write(html_frame)
+
+#note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
+#html_frame.replace("%MAP_BODY%", body_html) map_body is in maps_container
 print(response.text)
 print("\nPage:\n")
 print(maps_container)
