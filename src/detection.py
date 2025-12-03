@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 #import easyocr until we fix import errors
 import folium
 from utils.image_resize import resize_image
+import webbrowser
 
 load_dotenv('api.env')
 
@@ -146,8 +147,8 @@ url = url.replace("%LONGITUDE%", longitude_string)
 #create folium map
 m = folium.Map(
     location=[float(latitude_string), float(longitude_string)],
-    width= 800,
-    height= 600,
+    width= "50%",
+    height= 400,
     zoom_start = 17;
 )
 

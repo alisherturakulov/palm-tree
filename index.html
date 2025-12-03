@@ -1,35 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI GeoGuesser</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    <head>
+        <meta charset="utf-8">
+    </head>
+    <body>
+<h2>⚙️ How Our Detection Pipeline Works</h2>
+<div class="card">
+    <ol>
+        <li>
+            <b>API Setup</b>  
+            We load the Google Gemini API key securely from an <code>api.env</code> file using
+            <code>python-dotenv</code>
+        </li>
+        <li>
+            <b>Image Loading</b>  
+            The backend reads the uploaded image as raw bytes:
+            <code>with open('sample3.jpg', 'rb') as f: image_bytes = f.read()</code>.
+        </li>
 
-<body>
-    <div class="topbar">AI GeoGuesser</div>
+        <li>
+            <b>Image Resizing (Performance Boost)</b>  
+            Before sending the image to the AI model, we automatically resize it so the longest side is
+            <b>1024 pixels</b>.  
+            This makes the image much smaller and faster to process, while still keeping all the important details
+            the model needs (signs, buildings, trees, colors, etc.).  
+            It also prevents huge images from slowing down the system or causing errors.
+        </li>
 
-    <div class="content">
-        <!-- <img class="backgroundImage" src="https://gallery.yopriceville.com/downloadfullsize/send/14582"> -->
-        <div class="message-container" id="messageArea">            <div class="msg assistant">Hello person</div>
-            <!-- <div class="msg user">Hi bot</div> -->
-        </div>
-    </div>
-
-    <div class="bottombar">
-
-        <div class="input-space">
-            <form id="uploadForm">
-                <input placeholder="Upload an Image" type="file" id="imageFile" accept="image/*" required></input>
-                <button class="send-btn" type="submit">Send</button>
-            </form>
-        </div>
-        
-    </div>
-
-    <script src="script.js"></script> 
-
+        <li>
+            <b>OCR with EasyOCR</b>  
+            We run <code>easyocr.Reader</code> on the image (e.g. <code>sample.jpg</code>) to extract any visible
+            text such as street signs, shop names, or language hints.  
+            The detected text is combined into one block called <code>ocr_block</code>.
+        </li>
+        <li>
+            <b>Multimodal Call to Gemini</b>  
+            We send two things to the Gemini model:
+            <ul>
+                <li>The <b>raw image bytes</b> as a <code>types.Part.from_bytes(...)</code></li>
+                <li>The <b>OCR text</b> plus a detailed instruction prompt that tells the model to:
+                    <ul>
+                        <li>Analyze landmarks, roads, vegetation, signs, lighting, etc.</li>
+                        <li>Infer the <b>camera’s position</b>, not just the landmark location.</li>
+                        <li>Return <b>decimal latitude and longitude</b> in a strict bracket format:
+                            <code>[LATITUDE,LONGITUDE]</code>.
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </li>
+        <li>
+            <b>Coordinate Extraction</b>  
+            From the model’s response (<code>response.text</code>), we parse the latitude and longitude
+            using string operations, convert them to floats, and store them as:
+            <code>Latitude</code> and <code>Longitude</code>.
+        </li>
+        <li>
+            <b>Google Maps Integration</b>  
+            We build a URL like:
+            <code>https://www.google.com/maps/search/?api=1&query=LAT,LNG</code>  
+            and inject it into a simple HTML container so the user can click and see the predicted location on Google Maps.
+        </li>
+    </ol>
+</div>
 </body>
-
 </html>
