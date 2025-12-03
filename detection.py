@@ -2,7 +2,9 @@ from google import genai
 from google.genai import types
 import os
 from dotenv import load_dotenv
-import easyocr
+#import easyocr until we fix import errors
+import folium
+#import resize_image from "\utils\image_resize.py"
 
 load_dotenv('api.env')
 
@@ -16,7 +18,7 @@ if not google_api_key:
     exit(1)
 
 client = genai.Client(api_key=google_api_key)
-reader = easyocr.Reader(['en'], verbose=False)
+#reader = easyocr.Reader(['en'], verbose=False)
 
 from utils.image_resize import resize_image
 
@@ -26,10 +28,11 @@ with open('sample3.jpg', 'rb') as f:
 # Resize before sending to AI model
 image_bytes = resize_image(image_bytes, max_size=1024)
 
-
-ocr_results = reader.readtext('sample.jpg')
-ocr_texts = [text for (_, text, _) in ocr_results]
-ocr_block = "\n".join(ocr_texts) if ocr_texts else "NO TEXT FOUND"
+#read ocr results
+# ocr_results = reader.readtext('sample.jpg')
+#ocr_texts = [text for (_, text, _) in ocr_results]
+#ocr_block = "\n".join(ocr_texts) if ocr_texts else "NO TEXT FOUND"
+ocr_block = ""#temporary
 
 response = client.models.generate_content(
     model='gemini-2.5-flash',
@@ -44,7 +47,7 @@ response = client.models.generate_content(
         f'''
         {ocr_block}
 
-        f"""
+        
 OCR TEXT FROM IMAGE:
 {ocr_block}
 
@@ -121,7 +124,7 @@ OCR TEXT FROM IMAGE:
         - IF UNSURE, make your best estimate based on available clues
         - DO NOT output the coordinates of a landmark unless the camera was physically AT that landmark AS AN EXAMPLE.
 
-    then, at the end of the response return only coordinates comma-separated like so between brackets: 
+    then, at the end of the response return only coordinates comma-separated like so between brackets(ensure there are no other brackets in response to avoid find() method errors): 
         [<LATITUDE>,<LONGITUDE>]
 
         '''
@@ -130,9 +133,9 @@ OCR TEXT FROM IMAGE:
 
 url = "https://www.google.com/maps/search/?api=1&query=%LATITUDE%,%LONGITUDE%"
 coord_str = response.text
-coord_str = "25.0285,121.5714"
+#coord_str = "25.0285,121.5714"
 first_bracket = coord_str.find('[')
-first_comma = coord_str.find(',', start = first_bracket)
+first_comma = coord_str.find(',', first_bracket)
 Latitude = float(coord_str[first_bracket+1:first_comma])#find(value, start, end)
 Longitude = float(coord_str[first_comma+1:coord_str.len()-1])
 
@@ -140,6 +143,20 @@ Longitude = float(coord_str[first_comma+1:coord_str.len()-1])
 url.replace("%LATITUDE%", Latitude)
 url.replace("%LONGITUDE%", Longitude)
 
+#create folium map
+m = folium.Map(
+    location=(Latitude, Longitude),
+    width= 800,
+    height= 600
+)
+
+#get map components
+m.get_root().render()
+header = m.get_root().header.render()
+body_html = m.get_root().html.render()
+script = m.get_root().script.render()
+
+#https://www.google.com/maps/search/?api=1&query=25.0285,121.5714 for sample.jpg
 maps_container = """
     <div class="maps-container">
         <ul>
@@ -156,7 +173,21 @@ maps_container = """
         <ul>
     </div>
 """
-maps_container.replace("%GOOGLE_URL%",url)
-#note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
+html_frame = ""
+with open("maps.html", "r") as f:
+    html_frame = f.read()
 
+html_frame.replace("%MAP_META%", header)
+maps_container.replace("%MAP_BODY%", body_html)
+html_frame.replace("%MAP_SCRIPT%", script)
+maps_container.replace("%GOOGLE_URL%",url)
+html_frame.replace("%MAPS_CONTAINER%", maps_container)
+
+with open("maps.html", "w") as f:
+    f.write(html_frame)
+
+#note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
+#html_frame.replace("%MAP_BODY%", body_html) map_body is in maps_container
 print(response.text)
+print("\nPage:\n")
+print(maps_container)
