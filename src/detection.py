@@ -149,7 +149,7 @@ m = folium.Map(
     location=[float(latitude_string), float(longitude_string)],
     width= "50%",
     height= 400,
-    zoom_start = 17;
+    zoom_start = 17
 )
 
 #get map components
@@ -202,3 +202,5 @@ with open("maps.html", "w") as f:
 print(response.text)
 print("\nhtml_frame:\n")
 print(html_frame)
+
+webbrowser.open_new_tab(url)
