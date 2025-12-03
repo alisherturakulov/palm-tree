@@ -118,7 +118,7 @@ OCR TEXT FROM IMAGE:
         - IF UNSURE, make your best estimate based on available clues
         - DO NOT output the coordinates of a landmark unless the camera was physically AT that landmark AS AN EXAMPLE.
 
-    then, at the end of the response return only coordinates comma-separated like so between brackets: 
+    then, at the end of the response return only coordinates comma-separated like so between brackets(ensure there are no other brackets in response to avoid find() method errors): 
         [<LATITUDE>,<LONGITUDE>]
 
         '''
@@ -129,7 +129,7 @@ url = "https://www.google.com/maps/search/?api=1&query=%LATITUDE%,%LONGITUDE%"
 coord_str = response.text
 #coord_str = "25.0285,121.5714"
 first_bracket = coord_str.find('[')
-first_comma = coord_str.find(',', start = first_bracket)
+first_comma = coord_str.find(',', first_bracket)
 Latitude = float(coord_str[first_bracket+1:first_comma])#find(value, start, end)
 Longitude = float(coord_str[first_comma+1:coord_str.len()-1])
 
@@ -144,6 +144,11 @@ m = folium.Map(
     height= 600
 )
 
+#get map components
+m.get_root().render()
+header = m.get_root().header.render()
+body_html = m.get_root().html.render()
+script = m.get_root().script.render()
 
 #https://www.google.com/maps/search/?api=1&query=25.0285,121.5714 for sample.jpg
 maps_container = """
@@ -162,7 +167,17 @@ maps_container = """
         <ul>
     </div>
 """
+html_frame = ""
+with open("maps.html", "r") as f:
+    html_frame = f.read()
+
+html_frame.replace("%MAP_META%", header)
+maps_container.replace("%MAP_BODY%", body_html)
+html_frame.replace("%MAP_SCRIPT%", script)
+
 maps_container.replace("%GOOGLE_URL%",url)
 #note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
 
 print(response.text)
+print("\nPage:\n")
+print(maps_container)
