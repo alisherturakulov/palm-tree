@@ -1,206 +1,111 @@
+import os
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from google import genai
 from google.genai import types
-import os
 from dotenv import load_dotenv
-#import easyocr until we fix import errors
-import folium
-from utils.image_resize import resize_image
-import webbrowser
+from image_resize import resize_image
 
-load_dotenv('api.env')
+load_dotenv("api.env")
 
-# Try to get the API key from environment variables
-# First checks api.env file, then system environment variables
-google_api_key = os.getenv('GOOGLE_API_KEY')
+app = Flask(__name__)
+CORS(app)
 
-# Validate that the API key was found
+google_api_key = os.getenv("GOOGLE_API_KEY")
 if not google_api_key:
-    print("Please set GOOGLE_API_KEY in api.env file or as an environment variable")
+    print("No API key. Fix your life.")
     exit(1)
 
-client = genai.Client(api_key=google_api_key)
-#reader = easyocr.Reader(['en'], verbose=False)
+client = genai.Client(api_key = google_api_key)
 
 
+def analyze_image_with_gemini(image_bytes, mime):
+    # Resize before sending to AI model
+    image_bytes = resize_image(image_bytes, max_size=1024)
 
-with open('sample3.jpg', 'rb') as f:
-    image_bytes = f.read()
+    ocr_block = ""  # your temp placeholder
 
-# Resize before sending to AI model
-image_bytes = resize_image(image_bytes, max_size=1024)
+    response = client.models.generate_content(
+        model = 'gemini-2.5-flash',
+        contents = [
+            types.Part.from_bytes(
+                data = image_bytes,
+                mime_type = mime,
+            ),
+            f'''
+            {ocr_block}
 
-#read ocr results
-# ocr_results = reader.readtext('sample.jpg')
-#ocr_texts = [text for (_, text, _) in ocr_results]
-#ocr_block = "\n".join(ocr_texts) if ocr_texts else "NO TEXT FOUND"
-ocr_block = ""#temporary
+            OCR TEXT FROM IMAGE:
+            {ocr_block}
 
-response = client.models.generate_content(
-    model='gemini-2.5-flash',
-    contents=[
-        
-        types.Part.from_bytes(
-            data=image_bytes,
-            mime_type='image/jpeg',
-        ),
-        # Prompt the model to analyze the image and OCR text to find the location
-        # Expected output format: https://www.google.com/maps/search/?api=1&query=25.0285,121.5714
-        f'''
-        {ocr_block}
+            Your task: 
+            Infer the MOST LIKELY CAMERA LOCATION where this photo was taken, NOT THE LANDMARK ITSELF IF PRESENTED.
 
-        
-OCR TEXT FROM IMAGE:
-{ocr_block}
+            Instructions:
+            1. Identify any signs (what is shown) visible.
+            2. Estimate the direction the camera is facing.
+            3. Determine the camera's approximate POSITION based on:
+                - perspective
+                - horizon height
+                - distance scaling
+                - shadows
+                - elevation
+                - skyline relative position
 
-    Your task: 
-    Infer the MOST LIKELY CAMERA LOCATION where this photo was taken, NOT THE LANDMARK ITSELF IF PRESENTED.
+            Image may show anything. ALWAYS estimate the camera's coordinates.
 
-    Instructions:
-    1. Identify any signs (what is shown) visible.
-    2. Estimate the direction the camera is facing (e.g., toward the west at sunset).
-    3. Determine the camera's approximate POSITION based on:
-        - perspective and viewing angle
-        - height relative to horizon
-        - distance implied by scale of buildings
-        - direction of shadows
-         - elevation (hill, tower, drone, roof)
-        - relative position of skyline features
+            ANALYZE USING:
+            - Landmarks
+            - Roads
+            - Tree species
+            - Geography
+            - Urban features
+            - Lighting direction
+            - OCR text (if present)
 
-    The image may show:
-        - a landmark,
-        - a random road,
-        - a forest,
-        - a city skyline,
-        - a residential street,
-        - a commercial area,
-        - an indoor/outdoor scene,
-        - or a highly obscure place.
+            OUTPUT REQUIREMENTS:
+            - Provide explanation of reasoning.
+            - Then at the end return ONLY:
+              [<LATITUDE>,<LONGITUDE>]
+            '''
+        ]
+    )
 
-    No matter what type of image it is, ALWAYS estimate the camera's coordinates.
+    text = response.text.strip()
+    return text
+
+@app.route("/analyze", methods=["POST"])
+def analyze_api():
+    if "image" not in request.files:
+        return jsonify({"error": "No file sent."}), 400
+
+    img = request.files["image"]
+    image_bytes = img.read()
+    mime = img.mimetype
+
+    gemini_output = analyze_image_with_gemini(image_bytes, mime)
+
+    # Extract coordinates from brackets
+    try:
+        first = gemini_output.find("[")
+        comma = gemini_output.find(",", first)
+        last = gemini_output.find("]", comma)
+
+        lat = float(gemini_output[first + 1 : comma])
+        lon = float(gemini_output[comma + 1 : last])
+
+    except Exception as exc:
+        return jsonify({
+            "error": "Model returned invalid coordinate format",
+            "model_output": gemini_output
+        }), 500
+
+    return jsonify({
+        "result": gemini_output,
+        "latitude": lat,
+        "longitude": lon
+    })
 
 
-    ANALYZE THE IMAGE USING:
-
-    1. **Landmarks (if present):**
-        - Identify any recognizable buildings, towers, mountains, bridges, monuments.
-        - Use them ONLY as reference points to triangulate where the photographer stood.
-        - DO NOT return the landmark's own coordinates.
-
-    2. **Road & Infrastructure Clues:**
-        - Road markings (solid lines, dashed lines, shoulder style)
-        - Sign shape, color, typography (USA uses MUTCD signs, EU uses Vienna Convention)
-        - Speed limit sign design
-        - Guardrail style
-        - Road curvature, width, asphalt color
-        - Shoulder type (gravel, grass, concrete)
-
-    3. **Environmental & Landscape Clues:**
-        - Tree species and density
-        - Grass color
-        - Desert vs alpine vs coastal vs plains
-        - Mountain shapes and snowline
-        - Vegetation typical of certain regions
-
-    4. **Urban/Suburban Clues (if applicable):**
-        - Traffic lights, crosswalks, streetlamp style
-        - Fences, sidewalks, benches
-        - Storefront colors, neon signs
-        - Vehicle models and license plate shapes (blurred or not)
-
-    5. **Directional + Lighting Clues:**
-        - Sun angle (estimate time of day)
-        - Shadows for cardinal direction
-        - Orientation toward major landmarks or sunsets
-
-    6. **OCR TEXT (optional):**
-        If text is present, use it to narrow down region.
-        If no text, ignore OCR gracefully.
-
-        --------------------------
-        OUTPUT REQUIREMENTS:
-        --------------------------
-
-     - Latitude and longitude must be decimal numbers.
-        - PROVIDE AN EXPLANATION of your reasoning STEPS in arriving at the estimated camera location.
-        - IF UNSURE, make your best estimate based on available clues
-        - DO NOT output the coordinates of a landmark unless the camera was physically AT that landmark AS AN EXAMPLE.
-
-    then, at the end of the response return only coordinates comma-separated like so between brackets(ensure there are no other brackets in response to avoid find() method errors): 
-        [<LATITUDE>,<LONGITUDE>]
-
-        '''
-    ]
-)   
-
-url = "https://www.google.com/maps/search/?api=1&query=%LATITUDE%,%LONGITUDE%"
-coord_str = response.text
-#coord_str = "25.0285,121.5714"
-first_bracket = coord_str.find('[')
-first_comma = coord_str.find(',', first_bracket)
-latitude_string= coord_str[first_bracket+1:first_comma]#find(value, start, end)
-longitude_string = coord_str[first_comma+1:len(coord_str)-1]
-
-#complete url
-url = url.replace("%LATITUDE%", latitude_string)
-url = url.replace("%LONGITUDE%", longitude_string)
-
-#create folium map
-m = folium.Map(
-    location=[float(latitude_string), float(longitude_string)],
-    width= "50%",
-    height= 400,
-    zoom_start = 17
-)
-
-#get map components
-m.get_root().render()
-header = m.get_root().header.render()
-body_html = m.get_root().html.render()
-script = m.get_root().script.render()
-
-#https://www.google.com/maps/search/?api=1&query=25.0285,121.5714 for sample.jpg
-maps_container = """
-    <div class="maps-container">
-        <ul>
-            <li>
-                <a href="%GOOGLE_URL%"></a>
-                    <p>
-                        Google Maps Query
-                    </p>
-                </a>
-            <li>
-            <li>
-                %MAP_BODY%
-            </li>
-        <ul>
-    </div>
-"""
-#store maps.html contents
-html_frame = ""
-with open("maps.html", "r") as f:
-    html_frame = f.read()
-    
-
-#replace 
-html_frame = html_frame.replace("%MAP_META%", header)
-maps_container = maps_container.replace("%MAP_BODY%", body_html)
-html_frame = html_frame.replace("%MAP_SCRIPT%", script)
-maps_container = maps_container.replace("%GOOGLE_URL%",url)
-html_frame = html_frame.replace("%MAPS_CONTAINER%", maps_container)
-
-print("header\n"+header)
-print("body_html\n"+body_html)
-print("script\n" + script)
-print("maps_container\n" + maps_container)
-
-#write updated html_frame to maps.html
-with open("maps.html", "w") as f:
-    f.write(html_frame)
-
-#note: you probably need to use a stronger AI model to be able to more accurately depict location from images; however, does somewhat work 
-#html_frame.replace("%MAP_BODY%", body_html) map_body is in maps_container
-print(response.text)
-print("\nhtml_frame:\n")
-print(html_frame)
-
-webbrowser.open_new_tab(maps.html)
+if __name__ == "__main__":
+    app.run(debug = True)
