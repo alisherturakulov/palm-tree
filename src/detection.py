@@ -21,7 +21,7 @@ client = genai.Client(api_key = google_api_key)
 
 def analyze_image_with_gemini(image_bytes, mime):
     # Resize before sending to AI model
-   image_bytes = resize_image(image_bytes, max_size=1024)
+    image_bytes = resize_image(image_bytes, max_size=1024)
     mime = "image/jpeg"  # resized image is now JPEG
 
     ocr_block = ""  # your temp placeholder
