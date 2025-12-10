@@ -4,7 +4,7 @@ from flask_cors import CORS
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
-from image_resize import resize_image
+from utils.image_resize import resize_image
 
 load_dotenv("api.env")
 
