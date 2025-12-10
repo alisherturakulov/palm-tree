@@ -106,3 +106,56 @@
     .send-btn:hover {
       opacity: 1;
     }
+
+body {
+  background: #f4f4f7;
+  font-family: system-ui, sans-serif;
+  margin: 0;
+  padding: 20px;
+  display: block; /* overrides chatbot page flex layout */
+}
+
+/* Section Headers */
+h2 {
+  color: #BF0504;
+  font-size: 24px;
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+/* Card Box */
+.card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid #e2e2e2;
+  max-width: 900px;
+  margin: 0 auto 30px auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Numbered List */
+.card ol {
+  padding-left: 25px;
+}
+
+.card li {
+  margin-bottom: 14px;
+  line-height: 1.5;
+  font-size: 16px;
+}
+
+/* Code Snippets */
+code {
+  background: #eee;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+/* Images inside pipeline card */
+.card img {
+  margin-top: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
